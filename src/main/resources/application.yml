@@ -9,10 +9,20 @@ spring:
   # spring boot jpa 透過以下設定,整合了原本 jpa 在 persistence.xml 的相關設定
   jpa:
     database-platform: org.hibernate.dialect.MySQL8Dialect
-    hibernate:
-      ddl-auto: update
+
+    #hibernate
+    properties:
+      hibernate:
+        use_sql_comments: true
+        format_sql: true
 
 
 #server setting
 server:
   port: 10021
+
+#logging
+logging:
+  config: classpath:logback-spring.xml
+  level:
+    com.jay: INFO
