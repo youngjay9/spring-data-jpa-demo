@@ -1,1 +1,63 @@
 
+package com.jay.config;
+
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.Database;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+
+import javax.persistence.EntityManagerFactory;
+import javax.sql.DataSource;
+import java.io.File;
+import java.util.Properties;
+
+@Slf4j
+@Configuration
+public class CommonDataSourceConfig {
+
+    @Value("${spring.datasource.username}")
+    private String username;
+    @Value("${spring.datasource.url}")
+    private String jdbcUrl;
+
+    @Value("${ctbc.db.pwPath}")
+    private String pwPath ;
+
+    @Value("${batch.jdbcBatchSize}")
+    private static int batchSize;
+
+    @Bean
+    @Primary
+    @ConfigurationProperties(prefix = "spring.datasource.hikari")
+    public DataSource primaryDatasource() {
+        String password;
+        
+        return DataSourceBuilder.create().url(jdbcUrl).username(username).password(password).build();
+    }
+
+    // 設定 batch insert 筆數 500
+    @Bean
+    public EntityManagerFactory entityManagerFactory(DataSource dataSource) {
+        HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
+        vendorAdapter.setDatabase(Database.ORACLE);
+        LocalContainerEntityManagerFactoryBean factory = new LocalContainerEntityManagerFactoryBean();
+        Properties jpaProperties = new Properties();
+        jpaProperties.put("hibernate.jdbc.batch_size", batchSize);
+        jpaProperties.put("hibernate.order_inserts", true);
+        jpaProperties.put("hibernate.order_updates", true);
+        factory.setJpaProperties(jpaProperties);
+        factory.setJpaVendorAdapter(vendorAdapter);
+        factory.setPackagesToScan("ctbc.ob.maintain.domain");
+        factory.setDataSource(dataSource);
+        factory.afterPropertiesSet();
+        return factory.getObject();
+    }
+
+}
