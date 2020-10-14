@@ -61,3 +61,44 @@ public class CommonDataSourceConfig {
     }
 
 }
+
+
+
+
+@Autowired
+private EntityManagerFactory entityManagerFactory;
+
+// 開始執行 bulk insert 至 ob_binding_check_idno_list
+      EntityManager entityManager = entityManagerFactory.createEntityManager();
+      EntityTransaction entityTransaction = entityManager.getTransaction();
+      int batchSize = 10;
+
+      try {
+        entityTransaction.begin();
+        for (int i = 0; i < encryptIdNoList.size(); i++) {
+          // 每 10 筆 commit 一次到 DB
+          if (i > 0 && i % batchSize == 0) {
+            entityTransaction.commit();
+            entityTransaction.begin();
+
+            entityManager.clear();
+          }/* end if i mod batchSize == 0*/
+
+          MyEntity MyEntity = new MyEntity();
+          MyEntity.setId(generatePK());
+          MyEntity.setIdNo(encryptIdNoList.get(i));
+
+          entityManager.persist(MyEntity);
+        }/* end for encryptIdNoList */
+
+        entityTransaction.commit();
+      } catch (RuntimeException e) {
+        log.error(
+            "bulik insert MyEntity has exception!!",
+            e);
+        if (entityTransaction.isActive()) {
+          entityTransaction.rollback();
+        }
+      } finally {
+        entityManager.close();
+      }
